@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import tqdm
+# import tqdm
+from math import floor
 
 quota_dict = {
 	"/home/ckoch5": 
@@ -10,13 +11,17 @@ quota_dict = {
 		"Item Usage": (56, 100)}
 		}
 
-def print_bar(quotatuple, quant):
-    usage = quotatuple[0]
-    total = quotatuple[1]
-#    print(tqdm.tqdm.format_meter(usage, total, 1, ascii='-#',prefix=quant, bar_format='{desc}: [{bar:40}] {n_fmt}/{total_fmt} GB {percentage:3.0f}%'))
-    with tqdm.tqdm(total=total,ascii='-#',desc = quant,
-    bar_format=' {desc}: [{bar:40}] {n_fmt}/{total_fmt} GB {percentage:3.0f}%') as static_pbar:
-        static_pbar.update(usage)
+def print_bar(quotatuple: tuple[float], quant: str, length: int = 40, used_char: str = '#', empty_char: str = '-'):
+    usage: float = quotatuple[0]
+    total: float = quotatuple[1]
+    # Rounding up to nearest int out of 100
+    percent_used: int = ceiling((usage / total) * 100)
+    # with tqdm.tqdm(total=total,ascii='-#',desc = quant,
+    # bar_format=' {desc}: [{bar:40}] {n_fmt}/{total_fmt} GB {percentage:3.0f}%') as static_pbar:
+        # static_pbar.update(usage)
+    n_used_chars: int = floor(prevent_used * length / 100)
+    n_empty_chars: int = length - n_used_chars
+    
 
 # bar_format='[{bar}]'
 # bar_format=' [{bar}] {n_fmt}/{total_fmt} GB {desc}: {percentage:3.0f}%'
