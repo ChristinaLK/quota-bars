@@ -1,35 +1,76 @@
 #!/usr/bin/env python3
+"""
+Script to generate percent usage bars to visually display
+a user's quotas
+"""
 
-# import tqdm
-from math import floor
+# Built-in package, part of standard library
+from math import floor, ceil
 
-quota_dict = {
-	"/home/ckoch5": 
-		{"Size usage": (15, 20)},
-	"/staging/ckoch5": 
-		{"Size Usage": (10, 100),
-		"Item Usage": (56, 100)}
-		}
 
-def print_bar(quotatuple: tuple[float], quant: str, length: int = 40, used_char: str = '#', empty_char: str = '-'):
-    usage: float = quotatuple[0]
-    total: float = quotatuple[1]
-    # Rounding up to nearest int out of 100
-    percent_used: int = ceiling((usage / total) * 100)
-    # with tqdm.tqdm(total=total,ascii='-#',desc = quant,
-    # bar_format=' {desc}: [{bar:40}] {n_fmt}/{total_fmt} GB {percentage:3.0f}%') as static_pbar:
-        # static_pbar.update(usage)
-    n_used_chars: int = floor(prevent_used * length / 100)
+def percent_used(usage: float, total: float) -> int:
+    """Calculate percentage as nearest int out of 100"""
+    return int((usage / total) * 100)
+
+
+def progress_bar(
+    usage: float,
+    total: float,
+    length: int = 40,
+    used_char: str = "#",
+    empty_char: str = "-",
+) -> str:
+    """General mechanism for creating a progress bar"""
+
+    # Round up (so ~zero has one used_char, and within one unit of 100% has all used_char)
+    n_used_chars: int = ceil(percent_used(usage, total) * length / 100)
+    # Remaining chars must be empty
     n_empty_chars: int = length - n_used_chars
-    
 
-# bar_format='[{bar}]'
-# bar_format=' [{bar}] {n_fmt}/{total_fmt} GB {desc}: {percentage:3.0f}%'
-# [default: '{l_bar}{bar}{r_bar}'], where l_bar='{desc}: {percentage:3.0f}%|' and r_bar='| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, ' '{rate_fmt}{postfix}]' Possible vars: l_bar, bar, r_bar, n, n_fmt, total, total_fmt, percentage, elapsed, elapsed_s, ncols, nrows, desc, unit, rate, rate_fmt, rate_noinv, rate_noinv_fmt, rate_inv, rate_inv_fmt, postfix, unit_divisor, remaining, remaining_s, eta. Note that a trailing ": " is automatically removed after {desc} if the latter is empty.
+    # Progress bar
+    bar: str = f"{used_char * n_used_chars}{empty_char * n_empty_chars}"
 
-for dirpath in quota_dict: 
-    print(dirpath)
-    for quantity in quota_dict[dirpath]: 
-    	#print(quantity)
-    	print_bar(quota_dict[dirpath][quantity], quantity)
-    print("     ")
+    return bar
+
+
+def formatted_progress_bar(quota_tuple: tuple[float], quant: str) -> str:
+    """
+    Nicely formatted progress bar.
+    Edit this to change any of the formatting.
+    """
+    usage: float = quota_tuple[0]
+    total: float = quota_tuple[1]
+
+    bar: str = progress_bar(usage, total, length=40, used_char="#", empty_char="-")
+
+    return f" {quant}: [{bar}] {usage}/{total} GB {percent_used(usage, total):3.0f}%"
+
+
+def generate_quota_bars(quota_dict: dict):
+    """Generate quota bars for a given quota dict"""
+    line_list: list[str] = []
+    for dirpath, quantity_dict in quota_dict.items():
+        line_list.append(dirpath)
+        for quantity, quota_tuple in quantity_dict.items():
+            line_list.append(formatted_progress_bar(quota_tuple, quantity))
+
+        line_list.append("")
+
+    # Combine the lines into a single string separated by newlines
+    return "\n".join(line_list)
+
+
+if __name__ == "__main__":
+    # Only execute the following if actually running the script.
+    # (So the above functions can be imported by a different python script, if desired.)
+
+    # First, get quota_dict
+
+    # TODO: Generate quota_dict using output of new "get_quotas" script
+    quota_dict = {
+        "/home/ckoch5": {"Size usage": (15, 20)},
+        "/staging/ckoch5": {"Size Usage": (10, 100), "Item Usage": (56, 100)},
+    }
+
+    # Second, print the quota bars generated from said dict
+    print(generate_quota_bars(quota_dict))
